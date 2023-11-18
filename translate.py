@@ -27,7 +27,7 @@ class LogFileHandler(FileSystemEventHandler):
             lines = file.readlines()
 
         for line in reversed(lines):
-            if "[ALL] " in line and line not in self.translated_lines and "[SignonState] CL" not in line and "[RenderPipelineCsgo] RT" not in line:
+            if ("[ALL] " in line or "[TEAM] " in line) and line not in self.translated_lines:
                 username, message = line.split(": ", 1)
                 translated_message = self.translator.translate(message, dest='en')
                 # print(translated_message)
