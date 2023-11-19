@@ -1,1 +1,5 @@
 translated_lines.txt
+/build
+/dist
+translate.spec
+cs2_translate.zip

@@ -1,0 +1,3 @@
+googletrans==4.0.0-rc1
+watchdog==2.1.6
+tkinter
