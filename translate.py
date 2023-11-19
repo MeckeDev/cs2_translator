@@ -2,13 +2,6 @@
 
 # if you want to contact me: https://linktr.ee/Mecke_Dev
 
-import subprocess
-
-try:
-    subprocess.run(["pip", "install", "-r", "requirements.txt"], check=True)
-except subprocess.CalledProcessError:
-    print("Failed to install required packages. Please make sure 'pip' is installed.")
-
 import time
 import tkinter as tk
 from tkinter import ttk
