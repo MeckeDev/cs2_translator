@@ -21,7 +21,7 @@ then you have to modify these Entries:
 
 and turn them into this:
 
-        Game_radio"                        " %s1: %s2"
+        "Game_radio"                        " %s1: %s2"
         "Game_radio_location"               " %s1﹫%s2: %s3"
         "Cstrike_Chat_CT_Loc"               " [TEAM] %s1﹫%s3: %s2"
         "Cstrike_Chat_T_Loc"                " [TEAM] %s1﹫%s3: %s2"
