@@ -35,7 +35,8 @@ and turn them into this:
 now all your TEAM Chat has a [TEAM] ind front of the Message and Allchat has [ALL] 
 
 
-Example:
+Example:  
+
 ![image](https://github.com/MeckeDev/cs2_translator/assets/43956685/71077f09-7bcb-49c8-875a-4e52b6929f11)
 
 ![image](https://github.com/MeckeDev/cs2_translator/assets/43956685/08f68b7e-c494-4c25-879b-c372dad49293)
