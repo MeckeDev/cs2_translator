@@ -2,6 +2,27 @@
 
 # if you want to contact me: https://linktr.ee/Mecke_Dev
 
+import subprocess
+
+def install_missing_requirements():
+    try:
+        import time
+        import tkinter as tk
+        from tkinter import ttk
+        from tkinter import filedialog
+        from googletrans import Translator
+        from watchdog.observers import Observer
+        from watchdog.events import FileSystemEventHandler
+        from pynput.keyboard import Controller, Key
+        from fuzzywuzzy import fuzz
+    except ImportError as e:
+        print(f"Missing module: {e.name}")
+        print(f"Installing the missing module using pip...")
+        subprocess.call(['pip', 'install', e.name])
+
+# Call the function to install missing requirements
+install_missing_requirements()
+
 import time
 import tkinter as tk
 from tkinter import ttk
@@ -11,11 +32,14 @@ from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 import json
 import os
+from pynput.keyboard import Controller, Key
+from fuzzywuzzy import fuzz
 
 class LogFileHandler(FileSystemEventHandler):
-    def __init__(self, translator, translated_file_path, output_text, language_var):
+    def __init__(self, translator, translator_name, translated_file_path, output_text, language_var):
         super().__init__()
         self.translator = translator
+        self.translator_name = translator_name
         self.translated_file_path = translated_file_path
         self.translated_lines = set()
         self.output_text = output_text
@@ -30,12 +54,83 @@ class LogFileHandler(FileSystemEventHandler):
         with open(file_path, "r", encoding="utf-8") as file:
             lines = file.readlines()
 
+        
+        cfg_file_path = cfg_file_path = os.path.join(os.path.dirname(file_path), "cfg", "translate.cfg")
+
         for line in reversed(lines):
-            if ("[ALL] " in line or "[TEAM] " in line) and line not in self.translated_lines:
+            if ("[ALL] " in line or "[TEAM] " in line) and line not in self.translated_lines and "ChangeGameUIState:" not in line:
                 username, message = line.split(": ", 1)
                 dest_language = self.language_var.get()
-                translated_message = self.translator.translate(message, dest=dest_language)
-                translated_line = f'{username[15:]}: {translated_message.text} (from {languages[translated_message.src]})'
+
+                if message.startswith("tm_"):
+                    message = message.replace("tm_", "")
+                    to_lang = message.split(" ")[0]
+                    message = message.replace(to_lang, "")
+
+                    if to_lang in languages.keys():
+
+                        translated_message = self.translator.translate(message, dest=to_lang)
+
+                        with open(cfg_file_path, "w", encoding="utf-8") as file:
+                            file.write(f"say {translated_message.text}")
+
+                        translated_line = f'{username[15:]}: {translated_message.text} (from {languages[translated_message.src]} to  {languages[to_lang]})'
+
+                    else:
+
+                        with open(cfg_file_path, "w", encoding="utf-8") as file:
+                            file.write(f"say {to_lang} is not a know language code")
+
+                        translated_line = f'{username[15:]}: tried to translate to {to_lang})'
+
+                    
+
+                    # Press the "L" key
+                    keyboard = Controller()
+                    keyboard.press('l')
+                    keyboard.release('l')
+
+                if message.startswith("code_"):
+                    to_lang = message.replace("code_", "")
+                    lang = None
+                    real_lang = None
+
+                    search_value_lower = to_lang.lower()
+                    for key, value in languages.items():
+                        value_lower = value.lower()
+                        
+                        # Use fuzzy matching to check for similarity
+                        similarity_ratio = fuzz.ratio(search_value_lower, value_lower)
+                        if similarity_ratio >= 60:
+                            lang = key
+                            real_lang = languages[lang]
+
+                    # print(lang)
+
+                    with open(cfg_file_path, "w", encoding="utf-8") as file:
+                        if lang:
+                            file.write(f"say The Code for {real_lang} is {lang}. Try tm_{lang} This is a test.")
+                        else:
+                            file.write(f"say I did not understand {to_lang.strip()}")
+
+                    translated_line = f"Searched Code for: {to_lang}"
+
+                    # translated_line = f'{username[15:]}: {translated_message.text} (from {languages[translated_message.src]} to  {languages[to_lang]})'
+
+                    # Press the "L" key
+                    keyboard = Controller()
+                    keyboard.press('l')
+                    keyboard.release('l')
+
+                else:
+                    all_or_team = "[TEAM]" if "[TEAM]" in username else "[ALL]"
+                    username = ''.join(username.split(" ")[2:])
+                    username = username.replace("[DEAD]", "").replace("[TEAM]", "").replace("[ALL]", "")
+                    name_lang = self.translator_name.translate(username, dest=dest_language)
+
+                    username = f"{username} ({name_lang.text} / {languages[name_lang.src]})"
+                    translated_message = self.translator.translate(message, dest=dest_language)
+                    translated_line = f'{all_or_team} {username}\n\t {translated_message.text} (from {languages[translated_message.src]})\n\n'
 
                 # Update the GUI
                 self.output_text.insert(tk.END, translated_line + '\n')
@@ -52,7 +147,8 @@ def start_observer(console_log_path_var, output_text, language_var):
     translated_file_path = 'translated_lines.txt'
 
     translator = Translator()
-    event_handler = LogFileHandler(translator, translated_file_path, output_text, language_var)
+    translator_name = Translator()
+    event_handler = LogFileHandler(translator, translator_name, translated_file_path, output_text, language_var)
     observer = Observer()
     observer.schedule(event_handler, path, recursive=False)
     observer.start()
@@ -97,7 +193,7 @@ language_var.set("en")  # Set the default language to English
 language_label = tk.Label(root, text="Select Language:")
 language_label.pack(pady=5)
 
-language_menu = ttk.Combobox(root, values=list(languages.values()), textvariable="English", state="readonly")
+language_menu = ttk.Combobox(root, values=list(languages.values()), textvariable=language_var, state="readonly")
 language_menu.pack(pady=5)
 
 # Output text area
