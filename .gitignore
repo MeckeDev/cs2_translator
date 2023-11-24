@@ -4,3 +4,5 @@ translated_lines.txt
 translate.spec
 cs2_translate.zip
 /gui
+/env
+/.vs

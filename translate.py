@@ -35,6 +35,8 @@ import os
 from pynput.keyboard import Controller, Key
 from fuzzywuzzy import fuzz
 
+translate_all = True
+
 class LogFileHandler(FileSystemEventHandler):
     def __init__(self, translator, translator_name, translated_file_path, output_text, language_var):
         super().__init__()
@@ -59,27 +61,28 @@ class LogFileHandler(FileSystemEventHandler):
 
         for line in reversed(lines):
             if ("[ALL] " in line or "[TEAM] " in line) and line not in self.translated_lines and "ChangeGameUIState:" not in line:
+                teamchat = "_team [TM] " if "[TEAM] " in line else " [TM] "
                 username, message = line.split(": ", 1)
                 dest_language = self.language_var.get()
 
                 if message.startswith("tm_"):
                     message = message.replace("tm_", "")
                     to_lang = message.split(" ")[0]
-                    message = message.replace(to_lang, "")
+                    message = message[len(to_lang):]
 
                     if to_lang in languages.keys():
 
                         translated_message = self.translator.translate(message, dest=to_lang)
 
                         with open(cfg_file_path, "w", encoding="utf-8") as file:
-                            file.write(f"say {translated_message.text}")
+                            file.write(f"say{teamchat} {translated_message.text} (translated to {languages[to_lang]})")
 
                         translated_line = f'{username[15:]}: {translated_message.text} (from {languages[translated_message.src]} to  {languages[to_lang]})'
 
                     else:
-
+                        1
                         with open(cfg_file_path, "w", encoding="utf-8") as file:
-                            file.write(f"say {to_lang} is not a know language code")
+                            file.write(f"say{teamchat} {to_lang} is not a know language code")
 
                         translated_line = f'{username[15:]}: tried to translate to {to_lang})'
 
@@ -90,7 +93,7 @@ class LogFileHandler(FileSystemEventHandler):
                     keyboard.press('l')
                     keyboard.release('l')
 
-                if message.startswith("code_"):
+                elif message.startswith("code_"):
                     to_lang = message.replace("code_", "")
                     lang = None
                     real_lang = None
@@ -109,9 +112,9 @@ class LogFileHandler(FileSystemEventHandler):
 
                     with open(cfg_file_path, "w", encoding="utf-8") as file:
                         if lang:
-                            file.write(f"say The Code for {real_lang} is {lang}. Try tm_{lang} This is a test.")
+                            file.write(f"say{teamchat} The Code for {real_lang} is {lang}. Try tm_{lang} This is a test.")
                         else:
-                            file.write(f"say I did not understand {to_lang.strip()}")
+                            file.write(f"say{teamchat} I did not understand {to_lang.strip()}")
 
                     translated_line = f"Searched Code for: {to_lang}"
 
@@ -128,12 +131,26 @@ class LogFileHandler(FileSystemEventHandler):
                     username = username.replace("[DEAD]", "").replace("[TEAM]", "").replace("[ALL]", "")
                     name_lang = self.translator_name.translate(username, dest=dest_language)
 
-                    username = f"{username} ({name_lang.text} / {languages[name_lang.src]})"
+                    username_og = username
+                    username = f"{username_og} ({name_lang.text} / {languages[name_lang.src]})"
                     translated_message = self.translator.translate(message, dest=dest_language)
-                    translated_line = f'{all_or_team} {username}\n\t {translated_message.text} (from {languages[translated_message.src]})\n\n'
+                    translated_line = f'{all_or_team} {username}\n\t {translated_message.text} (from {languages[translated_message.src]})\n\t {message} (Original) \n\n'
+
+                    if translate_all and "[TM] " not in line:
+                        if translated_message.src != dest_language:
+                            with open(cfg_file_path, "w", encoding="utf-8") as file:
+                                file.write(f"say{teamchat} {translated_message.text} (translated from {languages[translated_message.src]})")
+
+                            translated_line = f'{username_og}: {translated_message.text} (from {languages[translated_message.src]} to  {languages[dest_language]})\n\t {message.strip()} (Original) \n\n'
+
+                            # Press the "L" key
+                            keyboard = Controller()
+                            keyboard.press('l')
+                            keyboard.release('l')
 
                 # Update the GUI
                 self.output_text.insert(tk.END, translated_line + '\n')
+                print(translated_line)
                 self.output_text.see(tk.END)
 
                 # Store the translated line in the set and the file
