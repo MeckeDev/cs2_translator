@@ -4,6 +4,7 @@
 
 import subprocess
 
+
 def install_missing_requirements():
     try:
         import time
@@ -20,6 +21,7 @@ def install_missing_requirements():
         print(f"Installing the missing module using pip...")
         subprocess.call(['pip', 'install', e.name])
 
+
 # Call the function to install missing requirements
 install_missing_requirements()
 
@@ -35,7 +37,8 @@ import os
 from pynput.keyboard import Controller, Key
 from fuzzywuzzy import fuzz
 
-translate_all = True
+translate_all = False
+
 
 class LogFileHandler(FileSystemEventHandler):
     def __init__(self, translator, translator_name, translated_file_path, output_text, language_var):
@@ -56,7 +59,6 @@ class LogFileHandler(FileSystemEventHandler):
         with open(file_path, "r", encoding="utf-8") as file:
             lines = file.readlines()
 
-        
         cfg_file_path = cfg_file_path = os.path.join(os.path.dirname(file_path), "cfg", "translate.cfg")
 
         for line in reversed(lines):
@@ -72,12 +74,14 @@ class LogFileHandler(FileSystemEventHandler):
 
                     if to_lang in languages.keys():
 
-                        translated_message = self.translator.translate(message, dest=to_lang)
+                        translated_message = self.translator.translate(message, dest=to_lang.lower())
 
                         with open(cfg_file_path, "w", encoding="utf-8") as file:
-                            file.write(f"say{teamchat} {translated_message.text} (translated to {languages[to_lang]})")
+                            file.write(f"say{teamchat} {translated_message.text} "
+                                    f"(translated to {languages[to_lang]})")
 
-                        translated_line = f'{username[15:]}: {translated_message.text} (from {languages[translated_message.src]} to  {languages[to_lang]})'
+                        translated_line = (f'{username[15:]}: {translated_message.text} '
+                                        f'(from {languages[translated_message.src]} to  {languages[to_lang]})')
 
                     else:
                         1
@@ -85,8 +89,6 @@ class LogFileHandler(FileSystemEventHandler):
                             file.write(f"say{teamchat} {to_lang} is not a know language code")
 
                         translated_line = f'{username[15:]}: tried to translate to {to_lang})'
-
-                    
 
                     # Press the "L" key
                     keyboard = Controller()
@@ -118,7 +120,8 @@ class LogFileHandler(FileSystemEventHandler):
 
                     translated_line = f"Searched Code for: {to_lang}"
 
-                    # translated_line = f'{username[15:]}: {translated_message.text} (from {languages[translated_message.src]} to  {languages[to_lang]})'
+                    # translated_line = f'{username[15:]}: {translated_message.text}
+                    # (from {languages[translated_message.src]} to  {languages[to_lang]})'
 
                     # Press the "L" key
                     keyboard = Controller()
@@ -129,19 +132,24 @@ class LogFileHandler(FileSystemEventHandler):
                     all_or_team = "[TEAM]" if "[TEAM]" in username else "[ALL]"
                     username = ''.join(username.split(" ")[2:])
                     username = username.replace("[DEAD]", "").replace("[TEAM]", "").replace("[ALL]", "")
-                    name_lang = self.translator_name.translate(username, dest=dest_language)
+                    name_lang = self.translator_name.translate(username, dest=dest_language.lower())
 
                     username_og = username
-                    username = f"{username_og} ({name_lang.text} / {languages[name_lang.src]})"
-                    translated_message = self.translator.translate(message, dest=dest_language)
-                    translated_line = f'{all_or_team} {username}\n\t {translated_message.text} (from {languages[translated_message.src]})\n\t {message} (Original) \n\n'
+                    username = f"{username_og} ({name_lang.text} / {languages[name_lang.src.lower()]})"
+                    translated_message = self.translator.translate(message, dest=dest_language.lower())
+                    translated_line = (f'{all_or_team} {username}\n\t {translated_message.text} '
+                                    f'(from {languages[translated_message.src]})\n\t {message} (Original) \n\n')
 
                     if translate_all and "[TM] " not in line:
                         if translated_message.src != dest_language:
                             with open(cfg_file_path, "w", encoding="utf-8") as file:
-                                file.write(f"say{teamchat} {translated_message.text} (translated from {languages[translated_message.src]})")
+                                file.write(f"say{teamchat} {translated_message.text} "
+                                        f"(translated from {languages[translated_message.src.lower()]})")
 
-                            translated_line = f'{username_og}: {translated_message.text} (from {languages[translated_message.src]} to  {languages[dest_language]})\n\t {message.strip()} (Original) \n\n'
+                            translated_line = (f'{username_og}: {translated_message.text} '
+                                            f'(from {languages[translated_message.src]} '
+                                            f'to  {languages[dest_language]})\n\t '
+                                            f'{message.strip()} (Original) \n\n')
 
                             # Press the "L" key
                             keyboard = Controller()
@@ -159,9 +167,11 @@ class LogFileHandler(FileSystemEventHandler):
                     translated_file.write(line + '\n')
                 break
 
+
 def start_observer(console_log_path_var, output_text, language_var):
     path = console_log_path_var.get()
     translated_file_path = 'translated_lines.txt'
+    print("starting Observer")
 
     translator = Translator()
     translator_name = Translator()
@@ -179,11 +189,14 @@ def start_observer(console_log_path_var, output_text, language_var):
         observer.stop()
     observer.join()
 
+
 def clear_log(console_log_path_var):
+    print("cleared Logfile")
     path = console_log_path_var.get()
     log_file_path = os.path.join(path, 'console.log')
     with open(log_file_path, 'w', encoding='utf-8'):
         pass
+
 
 # Load languages from JSON
 with open("languages.json", "r") as f:
